@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Blend_My_NFTs",
+    "name": "Blend_My_NFTs_DDance_v3",
     "author": "Torrin Leonard, This Cozy Studio Inc.",
     "version": (4, 5, 1),
     "blender": (3, 2, 2),
@@ -45,6 +45,7 @@ from main import \
     logic, \
     material_generator, \
     metadata_templates, \
+    rename, \
     refactorer
 
 from UILists import \
@@ -63,6 +64,7 @@ if "bpy" in locals():
         "material_generator": material_generator,
         "metadata_templates": metadata_templates,
         "refactorer": refactorer,
+        "rename": rename,
         "custom_metadata_ui_list": custom_metadata_ui_list,
         "logic_ui_list": logic_ui_list,
     }
@@ -361,6 +363,9 @@ def run_as_headless():
     elif args.operation == 'refactor-batches':
         refactorer.reformat_nft_collection(input)
 
+    elif args.operation == 'rename-bones':
+        rename.rename_nft_collection(input)
+
 
 # ======== User input Property Group ======== #
 class BMNFTS_PGT_Input_Properties(bpy.types.PropertyGroup):
@@ -621,6 +626,24 @@ class ExportNFTs(bpy.types.Operator):
 
         return {"FINISHED"}
 
+class Rename(bpy.types.Operator):
+    bl_idname = 'rename.bones'
+    bl_label = 'Rename Bones'
+    bl_description = 'Rename Bones.'
+    bl_options = {"REGISTER", "UNDO"}
+
+    reverse_order: BoolProperty(
+        default=False,
+        name="Reverse Order")
+
+    def execute(self, context):
+        helpers.activate_logging()
+
+        rename.rename_nft_collection(get_bmnft_data())
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
 
 class ResumeFailedBatch(bpy.types.Operator):
     bl_idname = 'exporter.resume_nfts'
@@ -728,6 +751,26 @@ class RefactorBatches(bpy.types.Operator):
         helpers.activate_logging()
 
         refactorer.reformat_nft_collection(get_bmnft_data())
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+class RenameBones(bpy.types.Operator):
+    """Refactor your collection? This action cannot be undone."""
+    bl_idname = 'renamebones'
+    bl_label = 'Rename your bones?'
+    bl_description = 'This action cannot be undone.'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    reverse_order: BoolProperty(
+        default=False,
+        name="Reverse Order")
+
+    def execute(self, context):
+        helpers.activate_logging()
+
+        rename.rename_nft_collection(get_bmnft_data())
         return {"FINISHED"}
 
     def invoke(self, context, event):
@@ -886,6 +929,24 @@ class BMNFTS_PT_CreateData(bpy.types.Panel):
         self.layout.operator("create.data", icon='DISCLOSURE_TRI_RIGHT', text="Create Data")
         row = layout.row()
         layout.label(text=f"{BMNFTS_VERSION}")
+
+class BMNFTS_PT_Rename(bpy.types.Panel):
+    bl_label = "Rename Bones"
+    bl_idname = "BMNFTS_PT_Rename"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Blend_My_NFTs'
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        input_tool_scene = scene.input_tool
+
+        row = layout.row()
+        layout.label(text="Renames all mixamorig names to DDance")
+
+        row = layout.row()
+        self.layout.operator("rename.bones", icon='FOLDER_REDIRECT', text="Rename now")
 
 
 class BMNFTS_PT_GenerateNFTs(bpy.types.Panel):
@@ -1137,12 +1198,14 @@ classes = (
                   ExportNFTs,
                   ResumeFailedBatch,
                   RefactorBatches,
+                  Rename,
                   ExportSettings,
 
                   # Panel Classes:
                   BMNFTS_PT_CreateData,
                   BMNFTS_PT_GenerateNFTs,
                   BMNFTS_PT_Refactor,
+                  BMNFTS_PT_Rename,
                   BMNFTS_PT_Other,
 ) + custom_metadata_ui_list.classes_Custom_Metadata_UIList + logic_ui_list.classes_Logic_UIList
 
