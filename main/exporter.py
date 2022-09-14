@@ -429,6 +429,7 @@ def render_and_save_nfts(input):
                     if coll != '0':
                         for obj in bpy.data.collections[coll].all_objects:
                             obj.select_set(True)
+                            obj.hide_render = False     #Added D-Dance // Set only selected addons render tag to True
 
                 for obj in bpy.data.collections['Script_Ignore'].all_objects:
                     obj.select_set(True)
@@ -448,8 +449,11 @@ def render_and_save_nfts(input):
                                 filepath=f"{model_path}.glb",
                                 check_existing=True,
                                 export_format='GLB',
-                                export_keep_originals=True,
-                                use_selection=True
+                                export_keep_originals=False,                 #Changed D-Dance // Set from True to False to solve texture error in webgl
+                                use_renderable=True,                         #Added D-Dance // Only export the objects with render tag = True
+                                export_draco_mesh_compression_enable=True,   #Added D-Dance // Enable the Draco Compression
+                                export_draco_mesh_compression_level=10       #Added D-Dance // Set Draco level to Max
+                                #use_selection=False
                         )
                     if input.model_file_format == 'GLTF_SEPARATE':
                         check_failed_exists(f"{model_path}.gltf")
